@@ -116,13 +116,15 @@ def login():
 
             # Validate username and password
             cursor.execute(
-                "SELECT * FROM Authentication WHERE Username = ? AND Password_Hash = ?",
+                "SELECT Student_ID, Username FROM Authentication WHERE Username = ? AND Password_Hash = ?",
                 (username, password),
             )
             user = cursor.fetchone()
             conn.close()
 
             if user:
+                # Store Student_ID in the session
+                session['student_id'] = user[0]
                 # Login successful, redirect to the dashboard page
                 return redirect(url_for('dashboard'))
             else:
@@ -132,16 +134,106 @@ def login():
         except sqlite3.Error as e:
             session['messages'] = [f"Database error: {e}"]
 
-    return render_template('login.html')
+    return render_template('appointment.html')
+
 
 
 @app.route('/dashboard')
 def dashboard():
     return render_template('dashboard.html')
 
-@app.route('/appointment')
+@app.route('/appointment', methods=['GET', 'POST'])
 def appointment():
-    return render_template('appointment.html')
+    session.pop('messages', None)  # Clear previous messages
+
+    try:
+        # Connect to the database
+        conn = sqlite3.connect('app.db')
+        conn.row_factory = sqlite3.Row  # Allows fetching rows as dictionaries
+        cursor = conn.cursor()
+
+        # Fetch available locations and exams
+        cursor.execute("SELECT Location_Name FROM Exam_Locations")
+        locations = [dict(row) for row in cursor.fetchall()]
+
+        cursor.execute("SELECT Exam_ID, Exam_Name FROM Exams")
+        exams = [dict(row) for row in cursor.fetchall()]
+        conn.close()
+
+    except sqlite3.Error as e:
+        session['messages'] = [f"Database error: {e}"]
+        return render_template('appointment.html', exams=[], locations=[])
+
+    if request.method == 'POST':
+        try:
+            # Retrieve form data
+            student_id = session.get('student_id')  # Ensure user is logged in
+            location_name = request.form['location']
+            exam_name = request.form['exams']
+            date = request.form['date']
+            time = request.form['time']
+
+            if not student_id:
+                session['messages'] = ["You must be logged in to book an appointment."]
+                return redirect(url_for('login'))
+
+            # Connect to the database
+            conn = sqlite3.connect('app.db')
+            cursor = conn.cursor()
+
+            # Fetch IDs for the selected exam and location
+            cursor.execute("SELECT Exam_Location_ID FROM Exam_Locations WHERE Location_Name = ?", (location_name,))
+            location_id = cursor.fetchone()
+
+            cursor.execute("SELECT Exam_ID FROM Exams WHERE Exam_Name = ?", (exam_name,))
+            exam_id = cursor.fetchone()
+
+            if not location_id or not exam_id:
+                session['messages'] = ["Invalid exam or location selected."]
+                return redirect(url_for('appointment'))
+
+            # Check if the student is already registered for the selected exam
+            cursor.execute("""
+                SELECT COUNT(*) FROM Registrations
+                WHERE Student_ID = ? AND Exam_ID = ?
+            """, (student_id, exam_id[0]))
+            count = cursor.fetchone()[0]
+
+            if count > 0:
+                # If the student is already registered, redirect to cancellation.html
+                session['messages'] = ["You are already registered for this exam."]
+                conn.close()
+                return redirect(url_for('cancellation'))
+
+            # If no registration exists, insert into Registrations
+            cursor.execute("""
+                INSERT INTO Registrations (Student_ID, Exam_ID, Exam_Date, Exam_Time, Exam_Location_ID)
+                VALUES (?, ?, ?, ?, ?)
+            """, (student_id, exam_id[0], date, time, location_id[0]))
+            conn.commit()
+            conn.close()
+
+            session['success_message'] = "Appointment successfully booked!"
+            return redirect(url_for('dashboard'))
+
+        except sqlite3.Error as e:
+            session['messages'] = [f"Database error: {e}"]
+            return redirect(url_for('appointment'))
+
+    return render_template('appointment.html', exams=exams, locations=locations)
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 @app.route('/reservation')
 def reservation():

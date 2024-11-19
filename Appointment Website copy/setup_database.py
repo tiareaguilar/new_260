@@ -15,11 +15,7 @@ CREATE TABLE IF NOT EXISTS Students (
 -- Create Exams Table
 CREATE TABLE IF NOT EXISTS Exams (
     Exam_ID INTEGER PRIMARY KEY AUTOINCREMENT,
-    Exam_Name VARCHAR(100) NOT NULL,
-    Exam_Date DATE NOT NULL,
-    Exam_Time TIME NOT NULL,
-    Exam_Location_ID INTEGER,
-    FOREIGN KEY (Exam_Location_ID) REFERENCES Exam_Locations(Exam_Location_ID)
+    Exam_Name VARCHAR(100) NOT NULL
 );
 
 -- Create Exam_Locations Table
@@ -34,9 +30,13 @@ CREATE TABLE IF NOT EXISTS Registrations (
     Registration_ID INTEGER PRIMARY KEY AUTOINCREMENT,
     Student_ID INTEGER,
     Exam_ID INTEGER,
+    Exam_Date DATE NOT NULL,
+    Exam_Time TIME NOT NULL,
+    Exam_Location_ID INTEGER NOT NULL,
     Timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
     FOREIGN KEY (Student_ID) REFERENCES Students(Student_ID),
-    FOREIGN KEY (Exam_ID) REFERENCES Exams(Exam_ID)
+    FOREIGN KEY (Exam_ID) REFERENCES Exams(Exam_ID),
+    FOREIGN KEY (Exam_Location_ID) REFERENCES Exam_Locations(Exam_Location_ID)
 );
 
 -- Create Authentication Table

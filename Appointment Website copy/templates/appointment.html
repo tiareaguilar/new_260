@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8">
-  <title>CSN Sign Up</title>
+  <title>CSN Appointment</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
   <link href="https://fonts.googleapis.com/css?family=Muli%7CRoboto:400,300,500,700,900" rel="stylesheet">
@@ -62,24 +62,23 @@
       <!-- Appointment Form -->
       <div class="card2">
         <h2 class="intro">Appointment</h2>
-          <form id="registrationForm">
+          <form id="registrationForm" method="POST" action="{{ url_for('appointment') }}">
               <!-- Step 1: Personal Information -->
               <div class="wizard-step active" id="step-1">
                   <label for="location">Location:</label>
                   <select id="location" name="location" required>
                       <option value="" disabled selected>Select Location</option>
-                      <option value="Charleston">Charleston</option>
-                      <option value="North Las Vegas">North Las Vegas</option>
-                      <option value="Henderson">Henderson</option>
+                      {% for location in locations %}
+                          <option value="{{ location['Location_Name'] }}">{{ location['Location_Name'] }}</option>
+                      {% endfor %}
                   </select><br><br>
 
                   <label for="exams">Exams:</label>
                   <select id="exams" name="exams" required>
                       <option value="" disabled selected>Select Exam</option>
-                      <option value="cit_129">Phil 114</option>
-                      <option value="cit_260">Math 181</option>
-                      <option value="cit_180">Acc 201</option>
-                      <option value="cs_202">CS 202</option>
+                      {% for exam in exams %}
+                          <option value="{{ exam['Exam_Name'] }}">{{ exam['Exam_Name'] }}</option>
+                      {% endfor %}
                   </select><br><br>
                   
                   <label for="date">Date:</label>
@@ -103,7 +102,7 @@
 
               <!-- Wizard Buttons -->
               <div class="wizard-buttons">
-                  <button type="button" id="nextButton" onclick="nextStep()">Submit</button>
+                  <button type="submit">Submit</button>
               </div>
           </form>
       </div>
@@ -117,15 +116,5 @@
     </ul>
     <p class="copyright">&copy; 2024 College of Southern Nevada</p>
   </footer>
-
-  <script>
-      function nextStep() {
-          // This function will handle moving to the next step
-          var step1 = document.getElementById('step-1');
-          var submitButton = document.getElementById('submitButton');
-          step1.classList.remove('active');
-          submitButton.style.display = 'block';
-      }
-  </script>
 </body>
 </html>
